@@ -13,19 +13,21 @@ def separateToVar(expression: str, positions: List[int]) -> List[str]:
     oper = expression[positions[0]:(positions[1]-1)]
     num2 = expression[positions[1]:]
     return [num1, oper, num2]
-# Переводит строку в число
-def strToInt(string: str) -> int:
-    splitedString = string.split()
-    if not (1 <= len(splitedString) <= 2):
-        if len(splitedString) < 1:
+# Переводит строку в целое число
+def strLsToInt(string: List[str]) -> int:
+    if not (1 <= len(string) <= 2):
+        if len(string) < 1:
             raise Exception("Ошибка, была введена пустая строка")
         else:
             raise Exception("Ошибка, числа в диапозоне 0-100 не могут содержать более 1 пробела")
     number = 0
     containUnits = False # Единицы
     containTens = False
-    for i in splitedString:
+    for i in string:
         if possibleNumbers.get(i) != None and not containUnits:
+            num = possibleNumbers[i]
+            if containTens and num == 0:
+                raise Exception("Ошибка, при наличии десятков нельзя писать ноль")
             number += possibleNumbers[i]
             containUnits = True
         elif possibleTens.get(i) != None and not containTens and not containUnits:
@@ -46,29 +48,62 @@ def strToInt(string: str) -> int:
         else:
             raise Exception("Ошибка, число не может больше 100")
     return number
+# Переводит строку в число
+def strToNum(string: str) -> int | float:
+    splitedString = string.split()
+    # Это условие улавливает значения для числел вида <число> внутри <число><опрация><число>
+    if "и" not in splitedString:
+        return strLsToInt(splitedString)
+    else: # Это условие улавливает значения для чисел вида <число>и<число><дробная часть>
+        floatMul = possibleFloats.get(splitedString[-1])
+        if floatMul == None:
+            raise Exception("Ошибка, была инициализация десятичной дроби, но не указан знаменатель, или он указан не в конце")
+        intPart = strLsToInt(splitedString[:splitedString.index("и")])
+        floatPart = strLsToInt(splitedString[splitedString.index("и")+1:-1]) * floatMul
+        floatPart = round(floatPart, 3)
+        if floatPart >= 1.0:
+            raise Exception("Ошибка, знаменатель оказался больше числителя", "floatPart:", floatPart)
+        return intPart + floatPart
 def strToOperator(string: str) -> str:
     result = possibleOperators.get(string)
     if result == None:
         raise Exception("Ошибка, не найден оператор", string)
     return result
-# Переводит число в строку
+# Переводит целое число в строку
 def intToStr(number: int) -> str:
     result = ""
-    if number // 10 == 0 or number // 10 == 1:
-        result = possibleNumbersRev[number]
+    subUnit = number % 10
+    subTen = (number - subUnit) % 100
+    subHundred = number - subTen - subUnit
+    if subTen != 10: # \ - Означает, что команда продолжается на следующей строке(к слову, после нее нельзя писать комментарии)
+        result = (possibleHundredsRev[subHundred]+" " if subHundred != 0 else "")+ \
+            (possibleTensRev[subTen]+" " if subTen != 0 else "")+ \
+            (possibleNumbersRev[subUnit] if subUnit != 0 or subHundred == subTen == 0 else "")
     else:
-        subTen = number // 10 * 10
-        subUnit = number % 10
-        result = possibleTensRev[subTen] + " " + possibleNumbersRev[subUnit]
+        result = (possibleHundredsRev[subHundred]+" " if subHundred != 0 else "")+ \
+            possibleNumbersRev[subTen+subUnit]
     return result
+# Переводит число в строку
+def numToStr(number: int | float) -> str:
+    if isinstance(number, int):
+        intToStr(number)
+    else:
+        intPart = int(number)
+        floatPart = round(number % 1, 3)
+        floatMul = round(0.1**len(str(floatPart).split('.')[-1]), 3)
+        result = intToStr(intPart)+" и "+intToStr(round(floatPart/floatMul, 3))+" "+possibleFloatsRev[floatMul]
+        return result
 def calc(expression: str) -> str:
     num1, oper, num2 = separateToVar(expression, separatorPos(expression))
-    result = eval(str(strToInt(num1)) + strToOperator(oper) + str(strToInt(num2)))
-    return intToStr(result)
+    result = eval(str(strToNum(num1)) + strToOperator(oper) + str(strToNum(num2)))
+    return numToStr(int(result) if int(result) == result else result)
 def testProgram():
     exp = "один плюс два"
     print(separatorPos("Что-то плюс хрень"))
     print(separateToVar(exp, separatorPos(exp)))
-    print(strToInt("двадцать один"))
+    print(strToNum("двадцать один"))
+    print(strToNum("три и четырнадцать сотых"))
+    print(intToStr(210))
+    print(numToStr(3.14159))
 if __name__ == "__main__":
-    print(calc("десять разделить на ноль"))
+    print(calc("двадцать и один десятых плюс один"))
