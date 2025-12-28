@@ -1,18 +1,18 @@
-from typing import List
+from typing import List, Any
 from forExpressions import *
-# Возращает позицию чисел/оператора в данном выражении
-def separatorPos(expression: str) -> List[int]:
-    for i in possibleOperators.keys():
-        pos = expression.find(i)
-        if pos > 0:
-            return [pos, pos+len(i)+1]
-    raise Exception("Ошибка, не найден оператор")
-# Делит строку на числа и оператор и возвращает их в виде строки
-def separateToVar(expression: str, positions: List[int]) -> List[str]:
-    num1 = expression[:(positions[0]-1)]
-    oper = expression[positions[0]:(positions[1]-1)]
-    num2 = expression[positions[1]:]
-    return [num1, oper, num2]
+# Делит строку на числа и операторы и возвращает их в виде списка со списками(если число) и с строками(если оператор)
+def separateToVar(expression: str) -> List[Any]:
+    answer = []
+    temp = []
+    for i in expression.split():
+        if i not in possibleOperators.keys():
+            temp.append(i)
+        else:
+            answer.append(temp)
+            answer.append(i)
+            temp = []
+    answer.append(temp)
+    return answer
 # Переводит строку в целое число
 def strLsToInt(string: List[str]) -> int:
     if not (1 <= len(string) <= 2):
@@ -49,17 +49,16 @@ def strLsToInt(string: List[str]) -> int:
             raise Exception("Ошибка, число не может больше 100")
     return number
 # Переводит строку в число
-def strToNum(string: str) -> int | float:
-    splitedString = string.split()
+def strToNum(string: List[str]) -> int | float:
     # Это условие улавливает значения для числел вида <число> внутри <число><опрация><число>
-    if "и" not in splitedString:
-        return strLsToInt(splitedString)
+    if "и" not in string:
+        return strLsToInt(string)
     else: # Это условие улавливает значения для чисел вида <число>и<число><дробная часть>
-        floatMul = possibleFloats.get(splitedString[-1])
+        floatMul = possibleFloats.get(string[-1])
         if floatMul == None:
             raise Exception("Ошибка, была инициализация десятичной дроби, но не указан знаменатель, или он указан не в конце")
-        intPart = strLsToInt(splitedString[:splitedString.index("и")])
-        floatPart = strLsToInt(splitedString[splitedString.index("и")+1:-1]) * floatMul
+        intPart = strLsToInt(string[:string.index("и")])
+        floatPart = strLsToInt(string[string.index("и")+1:-1]) * floatMul
         floatPart = round(floatPart, 3)
         if floatPart >= 1.0:
             raise Exception("Ошибка, знаменатель оказался больше числителя", "floatPart:", floatPart)
@@ -86,7 +85,7 @@ def intToStr(number: int) -> str:
 # Переводит число в строку
 def numToStr(number: int | float) -> str:
     if isinstance(number, int):
-        intToStr(number)
+        return intToStr(number)
     else:
         intPart = int(number)
         floatPart = round(number % 1, 3)
@@ -94,16 +93,21 @@ def numToStr(number: int | float) -> str:
         result = intToStr(intPart)+" и "+intToStr(round(floatPart/floatMul, 3))+" "+possibleFloatsRev[floatMul]
         return result
 def calc(expression: str) -> str:
-    num1, oper, num2 = separateToVar(expression, separatorPos(expression))
-    result = eval(str(strToNum(num1)) + strToOperator(oper) + str(strToNum(num2)))
+    expLs = separateToVar(expression)
+    evalStr = ""
+    for i in expLs:
+        evalStr += str(strToNum(i) if isinstance(i, List) else strToOperator(i))
+    result = eval(evalStr)
     return numToStr(int(result) if int(result) == result else result)
 def testProgram():
-    exp = "один плюс два"
-    print(separatorPos("Что-то плюс хрень"))
-    print(separateToVar(exp, separatorPos(exp)))
+    # exp = "один плюс два"
+    # print(separatorPos("Что-то плюс хрень"))
+    # print(separateToVar(exp, separatorPos(exp)))
     print(strToNum("двадцать один"))
     print(strToNum("три и четырнадцать сотых"))
     print(intToStr(210))
     print(numToStr(3.14159))
+    print(separateToVar("двадцать два плюс одиннадцать плюс сто тридцать четыре"))
 if __name__ == "__main__":
-    print(calc("двадцать и один десятых плюс один"))
+    print(calc("один плюс два плюс три"))
+    # print(calc("двадцать и один десятых плюс один"))
