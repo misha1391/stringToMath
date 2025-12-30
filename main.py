@@ -2,15 +2,35 @@ from typing import List, Any
 from forExpressions import *
 # Делит строку на числа и операторы и возвращает их в виде списка со списками(если число) и с строками(если оператор)
 def separateToVar(expression: str) -> List[Any]:
+    expresSpited = expression.split()
+    firstWordsOper = []
+    firstWordsOper += (i.split()[0] for i in possibleOperators.keys())
+    maxlen = max(len(k.split()) for k in possibleOperators) if possibleOperators else 1
     answer = []
     temp = []
-    for i in expression.split():
-        if i not in possibleOperators.keys():
-            temp.append(i)
-        else:
-            answer.append(temp)
-            answer.append(i)
-            temp = []
+    i = 0
+    while i < len(expresSpited):
+        # isOperator = False
+        for L in range(maxlen, 0, -1):
+            if i+L <= len(expresSpited):
+                check = " ".join(expresSpited[i:i+L])
+                if check in possibleOperators:
+                    if temp:
+                        answer.append(temp)
+                    answer.append(check)
+                    temp = []
+                    i += L
+                    # isOperator = True
+                    break
+        else: # Выполняется блок ниже, если цикл закончился обычно(не через break)
+            if expresSpited[i] in checkNumbers:# Если это не оператор
+                temp.append(expresSpited[i])
+                i += 1
+            else:
+                raise Exception("Ошибка, не найдено такое число!(возможно опечатка) ->", expresSpited[i], "возможно в: ", expresSpited[i:i+maxlen])
+        # if not isOperator:
+        #     answer.append(expresSpited[i])
+        #     i += 1
     answer.append(temp)
     return answer
 # Переводит строку в целое число
@@ -19,7 +39,7 @@ def strLsToInt(string: List[str]) -> int:
         if len(string) < 1:
             raise Exception("Ошибка, была введена пустая строка")
         else:
-            raise Exception("Ошибка, числа в диапозоне 0-100 не могут содержать более 1 пробела")
+            raise Exception("Ошибка, числа в диапозоне 0-100 не могут содержать более 1 пробела", string)
     number = 0
     containUnits = False # Единицы
     containTens = False
@@ -68,18 +88,27 @@ def strToOperator(string: str) -> str:
     if result == None:
         raise Exception("Ошибка, не найден оператор", string)
     return result
+def strToBracket(string: str) -> str:
+    result = brackets.get(string)
+    if result == None:
+        raise Exception("Ошибка, не найдена скобка", string)
+    return result
 # Переводит целое число в строку
 def intToStr(number: int) -> str:
+    minus = ""
+    if number < 0:
+        minus = "минус "
+        number = abs(number)
     result = ""
     subUnit = number % 10
     subTen = (number - subUnit) % 100
     subHundred = number - subTen - subUnit
     if subTen != 10: # \ - Означает, что команда продолжается на следующей строке(к слову, после нее нельзя писать комментарии)
-        result = (possibleHundredsRev[subHundred]+" " if subHundred != 0 else "")+ \
+        result = minus+(possibleHundredsRev[subHundred]+" " if subHundred != 0 else "")+ \
             (possibleTensRev[subTen]+" " if subTen != 0 else "")+ \
             (possibleNumbersRev[subUnit] if subUnit != 0 or subHundred == subTen == 0 else "")
     else:
-        result = (possibleHundredsRev[subHundred]+" " if subHundred != 0 else "")+ \
+        result = minus+(possibleHundredsRev[subHundred]+" " if subHundred != 0 else "")+ \
             possibleNumbersRev[subTen+subUnit]
     return result
 # Переводит число в строку
@@ -92,22 +121,31 @@ def numToStr(number: int | float) -> str:
         floatMul = round(0.1**len(str(floatPart).split('.')[-1]), 3)
         result = intToStr(intPart)+" и "+intToStr(round(floatPart/floatMul, 3))+" "+possibleFloatsRev[floatMul]
         return result
-def calc(expression: str) -> str:
+def calc(expression: str, test: bool = False) -> str:
     expLs = separateToVar(expression)
+    if test:
+        print(expLs)
     evalStr = ""
     for i in expLs:
-        evalStr += str(strToNum(i) if isinstance(i, List) else strToOperator(i))
+        evalStr += str(strToNum(i) if isinstance(i, List)
+                    else strToBracket(i) if brackets.get(i) != None
+                    else strToOperator(i))
     result = eval(evalStr)
-    return numToStr(int(result) if int(result) == result else result)
+    if test:
+        print(result)
+    return numToStr(int(result) if int(result) == result else result) # Перевод числа в int, если он является float без знаков после '.'
 def testProgram():
     # exp = "один плюс два"
     # print(separatorPos("Что-то плюс хрень"))
     # print(separateToVar(exp, separatorPos(exp)))
-    print(strToNum("двадцать один"))
-    print(strToNum("три и четырнадцать сотых"))
+    print(strToNum(["двадцать", "один"]))
+    print(strToNum(["три", "и", "четырнадцать", "сотых"]))
     print(intToStr(210))
     print(numToStr(3.14159))
     print(separateToVar("двадцать два плюс одиннадцать плюс сто тридцать четыре"))
 if __name__ == "__main__":
-    print(calc("один плюс два плюс три"))
+    # testProgram()
+    print(calc("один плюс два умножить на минус три", True))
+    print(calc("десять остаток от деления на три", True))
+    # print(calc("скобка открывается один плюс два скобка закрывается умножить на три"))
     # print(calc("двадцать и один десятых плюс один"))

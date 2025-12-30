@@ -50,15 +50,26 @@ possibleFloats = {"десятых": 0.1,
                   "тысячных": 0.001
 }
 # endregion
+# Содержит все числа для проверки внутри separateToVar
+checkNumbers = {}
+checkNumbers.update(possibleHundreds)
+checkNumbers.update(possibleTens)
+checkNumbers.update(possibleNumbers)
+checkNumbers.update(possibleFloats)
 # region Перевод числа в строку
 possibleHundredsRev = {v: k for k, v in possibleHundreds.items()}
 possibleTensRev = {v: k for k, v in possibleTens.items()}
 possibleNumbersRev = {v: k for k, v in possibleNumbers.items()}
 possibleFloatsRev = {v: k for k, v in possibleFloats.items()}
 # endregion
+# Скобки
+brackets = {"скобка открывается": "(",
+            "скобка закрывается": ")"
+}
 possibleOperators = {"плюс": "+",
                      "минус": "-",
                      "умножить на": "*",
                      "разделить на": "/",
-                     "остаток от деления на": "%"
+                     "остаток от деления на": "%",
 }
+possibleOperators.update(brackets)
