@@ -1,3 +1,4 @@
+from math import pi
 # region Перевод строки в число
 # 3.14 - три и четырнадцать сотых
 # Это числа, которые могут быть длиной 1-3(Нужно для опрелеления дробных значений)
@@ -42,7 +43,8 @@ possibleNumbers = {"ноль": 0,
                    "шестнадцать": 16,
                    "семнадцать": 17,
                    "восемнадцать": 18,
-                   "девятнадцать": 19
+                   "девятнадцать": 19,
+                   "пи": pi
 }
 # Дробные значения(Являются множителями для определения)
 possibleFloats = {"десятых": 0.1,
@@ -50,26 +52,47 @@ possibleFloats = {"десятых": 0.1,
                   "тысячных": 0.001
 }
 # endregion
-# Содержит все числа для проверки внутри separateToVar
+# region Содержит все числа для проверки внутри separateToVar
 checkNumbers = {}
 checkNumbers.update(possibleHundreds)
 checkNumbers.update(possibleTens)
 checkNumbers.update(possibleNumbers)
 checkNumbers.update(possibleFloats)
+# endregion
 # region Перевод числа в строку
 possibleHundredsRev = {v: k for k, v in possibleHundreds.items()}
 possibleTensRev = {v: k for k, v in possibleTens.items()}
 possibleNumbersRev = {v: k for k, v in possibleNumbers.items()}
 possibleFloatsRev = {v: k for k, v in possibleFloats.items()}
 # endregion
+# region Операторы
 # Скобки
 brackets = {"скобка открывается": "(",
             "скобка закрывается": ")"
 }
+bracketsRev = {v: k for k, v in brackets.items()}
+
+combinat = {"перестановок из": "permutations",
+            "размещений из": "placements",
+            "сочетаний из": "combinations"
+}
+combinatSep = "по"
+trigonometry = {"синус от": "sin",
+                "косинус от": "cos",
+                "тангенс от": "tan"
+}
+
+possibleFunctions = {}
+possibleFunctions.update(combinat)
+possibleFunctions.update(trigonometry)
+
 possibleOperators = {"плюс": "+",
                      "минус": "-",
                      "умножить на": "*",
                      "разделить на": "/",
                      "остаток от деления на": "%",
+                     "в степени": "**"
 }
 possibleOperators.update(brackets)
+possibleOperators.update(possibleFunctions)
+# endregion

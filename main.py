@@ -1,5 +1,6 @@
 from typing import List, Any
 from forExpressions import *
+from math import sin, cos, tan, factorial
 # Делит строку на числа и операторы и возвращает их в виде списка со списками(если число) и с строками(если оператор)
 def separateToVar(expression: str) -> List[Any]:
     expresSpited = expression.split()
@@ -9,29 +10,67 @@ def separateToVar(expression: str) -> List[Any]:
     answer = []
     temp = []
     i = 0
+    wasfunc = False
+    isOpenedBra = False
+    isCombinatory = None
     while i < len(expresSpited):
         # isOperator = False
         for L in range(maxlen, 0, -1):
             if i+L <= len(expresSpited):
                 check = " ".join(expresSpited[i:i+L])
                 if check in possibleOperators:
+                    if check in combinat and isCombinatory == False:
+                        raise Exception("Ошибка, комбинаторика была инициализирована не в начале")
+                    if check in possibleFunctions:
+                        wasfunc = True
+                    else:
+                        wasfunc = False
+                    
                     if temp:
                         answer.append(temp)
                     answer.append(check)
+
+                    if check in combinat and isCombinatory == None:
+                        isCombinatory = True
+                        answer.append(bracketsRev["("])
+                    else:
+                        isCombinatory = False
+                    
                     temp = []
                     i += L
                     # isOperator = True
                     break
         else: # Выполняется блок ниже, если цикл закончился обычно(не через break)
-            if expresSpited[i] in checkNumbers:# Если это не оператор
-                temp.append(expresSpited[i])
+            if isCombinatory == None:
+                isCombinatory = False
+            if isCombinatory:
+                if expresSpited[i] == combinatSep:
+                    answer.append(temp)
+                    answer.append(expresSpited[i])
+                    temp = []
+                    i += 1
+                    continue
+            elif wasfunc:
+                answer.append(bracketsRev["("])
+                wasfunc = False
+                isOpenedBra = True
+            if expresSpited[i] in checkNumbers: # Если это не оператор
+                if not isOpenedBra:
+                    temp.append(expresSpited[i])
+                else:
+                    answer.append([expresSpited[i]])
+                    answer.append(bracketsRev[")"])
+                    isOpenedBra = False
                 i += 1
             else:
-                raise Exception("Ошибка, не найдено такое число!(возможно опечатка) ->", expresSpited[i], "возможно в: ", expresSpited[i:i+maxlen])
+                raise Exception("Ошибка, не найдено такое число/операция!(возможно опечатка) ->", expresSpited[i], "возможно в: ", expresSpited[i:i+maxlen])
         # if not isOperator:
         #     answer.append(expresSpited[i])
         #     i += 1
-    answer.append(temp)
+    if temp:
+        answer.append(temp)
+    if isCombinatory:
+        answer.append(bracketsRev[")"])
     return answer
 # Переводит строку в целое число
 def strLsToInt(string: List[str]) -> int:
@@ -86,7 +125,10 @@ def strToNum(string: List[str]) -> int | float:
 def strToOperator(string: str) -> str:
     result = possibleOperators.get(string)
     if result == None:
-        raise Exception("Ошибка, не найден оператор", string)
+        if string == combinatSep:
+            result = ","
+        else:
+            raise Exception("Ошибка, не найден оператор", string)
     return result
 def strToBracket(string: str) -> str:
     result = brackets.get(string)
@@ -121,6 +163,31 @@ def numToStr(number: int | float) -> str:
         floatMul = round(0.1**len(str(floatPart).split('.')[-1]), 3)
         result = intToStr(intPart)+" и "+intToStr(round(floatPart/floatMul, 3))+" "+possibleFloatsRev[floatMul]
         return result
+# Перестановки
+def permutations(items: int) -> int:
+    if items < 0:
+        raise Exception("Ошибка, количество перестановок не может быть отрицательным", items)
+    return factorial(items)
+# Размешения
+def placements(items: int, places: int) -> int:
+    if items < 0:
+        raise Exception("Ошибка, количество предметов не может быть отрицательным", items)
+    if places <= 0:
+        raise Exception("Ошибка, количество мест может быть только положительным значением", places)
+    if places > items:
+        raise Exception("Ошибка, количество мест не может быть больше количества предметов", places, ">", items)
+    answer = factorial(items)/factorial(items-places)
+    return answer
+# Сочетания
+def combinations(items: int, places: int) -> int:
+    if items < 0:
+        raise Exception("Ошибка, количество предметов не может быть отрицательным", items)
+    if places <= 0:
+        raise Exception("Ошибка, количество мест может быть только положительным значением", places)
+    if places > items:
+        raise Exception("Ошибка, количество мест не может быть больше количества предметов", places, ">", items)
+    answer = factorial(items)/(factorial(places)*factorial(items-places))
+    return answer
 def calc(expression: str, test: bool = False) -> str:
     expLs = separateToVar(expression)
     if test:
@@ -133,7 +200,7 @@ def calc(expression: str, test: bool = False) -> str:
     result = eval(evalStr)
     if test:
         print(result)
-    return numToStr(int(result) if int(result) == result else result) # Перевод числа в int, если он является float без знаков после '.'
+    return numToStr(int(result) if int(result) == round(result, 3) else result) # Перевод числа в int, если он является float без знаков после '.'
 def testProgram():
     # exp = "один плюс два"
     # print(separatorPos("Что-то плюс хрень"))
@@ -143,9 +210,12 @@ def testProgram():
     print(intToStr(210))
     print(numToStr(3.14159))
     print(separateToVar("двадцать два плюс одиннадцать плюс сто тридцать четыре"))
-if __name__ == "__main__":
-    # testProgram()
     print(calc("один плюс два умножить на минус три", True))
     print(calc("десять остаток от деления на три", True))
-    # print(calc("скобка открывается один плюс два скобка закрывается умножить на три"))
-    # print(calc("двадцать и один десятых плюс один"))
+    print(calc("синус от пи", True))
+    print(calc("скобка открывается один плюс два скобка закрывается умножить на три", True))
+    print(calc("двадцать и один десятых плюс один", True))
+    print(calc("синус от скобка открывается пи умножить на два минус пи скобка закрывается", True))
+if __name__ == "__main__":
+    # testProgram()
+    print(calc("размещений из четыре по два"))
